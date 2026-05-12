@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReceiptVault AU</title>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0b0e;color:#dde1ea;font-size:14px;line-height:1.5;min-height:100vh}
+button,input,select,textarea{font-family:inherit;font-size:14px}
+a{color:#f0c040;text-decoration:none}
+
+/* NAV */
+.nav{display:flex;align-items:center;gap:8px;padding:0 18px;min-height:54px;background:#0a0b0e;border-bottom:1px solid #1e2230;position:sticky;top:0;z-index:50;flex-wrap:wrap;padding-top:6px;padding-bottom:6px}
+.logo{background:none;border:none;display:flex;align-items:center;gap:7px;cursor:pointer;padding:0;color:inherit}
+.logo-mark{color:#f0c040;font-size:19px}
+.logo-name{font-weight:800;font-size:17px;color:#fff;letter-spacing:-0.5px}
+.logo-tag{background:#f0c040;color:#000;font-size:9px;font-weight:700;padding:2px 4px;border-radius:3px;letter-spacing:1px}
+.nav-links{display:flex;gap:3px;flex:1;flex-wrap:wrap}
+.nav-btn{background:none;border:none;color:#9ca3af;font-size:13px;padding:6px 11px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.nav-btn:hover,.nav-btn.active{color:#fff;background:#1a1d28}
+.connect-btn{background:#0d2a1a;border:1px solid #10b981;color:#10b981;padding:6px 13px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap}
+.connect-btn:hover{background:#0a1f14}
+.connect-btn.error{background:#200808;border-color:#ef4444;color:#ef4444}
+.auth-ok{font-size:12px;color:#10b981;padding:4px 8px}
+.auth-warn{font-size:11px;color:#f59e0b;padding:4px 8px}
+
+/* MAIN */
+.main{max-width:1000px;margin:0 auto;padding:24px 18px 80px}
+.toast{position:fixed;top:64px;right:16px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;transition:opacity .3s}
+.toast.success{background:#0d3322;border:1px solid #10b981;color:#10b981}
+.toast.error{background:#2d0d0d;border:1px solid #ef4444;color:#ef4444}
+.err-bar{background:#1a0808;border-bottom:1px solid #5a1a10;padding:8px 18px;font-size:12px;color:#e85a4a;line-height:1.5}
+
+/* CARDS / SECTIONS */
+.card{background:#141720;border:1px solid #2a2e40;border-radius:12px;padding:15px}
+.section-title{font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.callout{display:flex;gap:10px;align-items:flex-start;background:#141720;border:1px solid #2a2e40;border-radius:10px;padding:12px 14px;font-size:13px;color:#9ca3af;margin-bottom:13px;line-height:1.5}
+.callout.warn{border-color:#6b4c10;background:#1a1205;color:#e8c060}
+.hint{font-size:12px;color:#6b7280;line-height:1.5;margin:0}
+.warn-text{font-size:12px;color:#f0a040;margin:0}
+.link-btn{background:none;border:none;color:#f0c040;cursor:pointer;font-size:inherit;padding:0;text-decoration:underline}
+/* SEARCHABLE DROPDOWN */
+.search-select-wrap{position:relative}
+.search-select-list{display:none;position:absolute;top:100%;left:0;right:0;background:#1a1d28;border:1px solid #f0c040;border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;z-index:100}
+.search-select-list.open{display:block}
+.search-select-item{padding:8px 11px;cursor:pointer;font-size:13px;color:#dde1ea;border-bottom:1px solid #2a2e40}
+.search-select-item:last-child{border-bottom:none}
+.search-select-item:hover,.search-select-item.selected{background:#252a3a;color:#f0c040}
+.search-select-chosen{font-size:11px;color:#10b981;margin-top:4px;padding:2px 0}
+
+
+/* FORM FIELDS */
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.label{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.4px;display:block}
+.input{background:#141720;border:1px solid #2a2e40;border-radius:8px;padding:8px 10px;color:#dde1ea;font-size:14px;outline:none;width:100%}
+.input:focus{border-color:#f0c040}
+textarea.input{resize:vertical;min-height:56px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* BUTTONS */
+.save-btn{background:#f0c040;color:#000;border:none;border-radius:9px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer;width:100%;margin-top:4px}
+.save-btn:disabled{opacity:.4;cursor:not-allowed}
+.save-btn.sm{width:auto;padding:8px 16px}
+.back-btn{background:none;border:1px solid #2a2e40;color:#9ca3af;padding:6px 13px;border-radius:8px;cursor:pointer;font-size:13px}
+.add-btn{background:#1a1d28;border:1px solid #3a3e50;color:#dde1ea;padding:6px 13px;border-radius:8px;cursor:pointer;font-size:13px}
+.queue-btn{background:none;border:1px solid #2a2e40;color:#9ca3af;border-radius:9px;padding:8px 18px;font-size:13px;cursor:pointer;width:100%;margin-top:5px}
+.queue-btn:hover{border-color:#f0c040;color:#f0c040}
+.icon-btn{background:#0f1118;border:1px solid #2a2e40;border-radius:5px;width:30px;height:30px;cursor:pointer;font-size:14px}
+.icon-btn.on{border-color:#f0c040}
+.color-dot{width:21px;height:21px;border-radius:50%;border:2px solid transparent;cursor:pointer;display:inline-block}
+.color-dot.on{border-color:#fff}
+
+/* HOME */
+.home{max-width:520px;margin:0 auto}
+.hero{text-align:center;padding:28px 0 18px}
+.h1{font-size:36px;font-weight:800;letter-spacing:-2px;color:#fff;line-height:1;margin:0 0 9px}
+.hero-sub{color:#6b7280;font-size:15px;margin:0}
+.hero-sub em{color:#f0c040;font-style:normal}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#141720;border:1px solid #2a2e40;border-radius:20px;padding:5px 12px;font-size:13px;cursor:pointer;color:#9ca3af;white-space:nowrap}
+.chip.on{color:#fff;background:#161a10}
+.capture-row{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:20px}
+.cap-btn{background:#141720;border:1px solid #2a2e40;border-radius:13px;padding:24px 13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:#dde1ea;width:100%}
+.cap-btn.primary{background:#16190a;border-color:#f0c040}
+.cap-btn:hover{border-color:#f0c040}
+.cap-icon{font-size:28px}
+.cap-label{font-weight:700;font-size:15px;color:#fff}
+.cap-hint{font-size:12px;color:#6b7280}
+.feats{display:flex;flex-direction:column;gap:7px}
+.feat{display:flex;align-items:center;gap:8px;font-size:13px;color:#6b7280}
+.tick{color:#f0c040;font-weight:700;width:15px;flex-shrink:0}
+
+/* CAMERA */
+.cam-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:100;align-items:center;justify-content:center}
+.cam-overlay.show{display:flex}
+.cam-box{background:#141720;border-radius:16px;overflow:hidden;width:min(95vw,500px)}
+.cam-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;border-bottom:1px solid #2a2e40;font-size:13px;color:#6b7280}
+.x-btn{background:none;border:none;color:#9ca3af;cursor:pointer;font-size:16px;padding:2px 5px}
+.cam-wrap{position:relative;background:#000}
+#cam-video{width:100%;display:block;max-height:55vh;object-fit:contain}
+.scan-frame{position:absolute;inset:8%;border:2px solid #f0c040;border-radius:9px;pointer-events:none}
+.shutter{margin:15px auto;display:flex;align-items:center;justify-content:center;width:58px;height:58px;border-radius:50%;background:none;border:3px solid #fff;cursor:pointer}
+.shutter-dot{width:42px;height:42px;border-radius:50%;background:#fff;display:block}
+
+/* REVIEW */
+.review-grid{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+.preview-col{position:sticky;top:72px;display:flex;flex-direction:column;gap:12px}
+.preview-img{width:100%;border-radius:9px;border:1px solid #2a2e40;display:block}
+.dest-title{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.profile-pick{display:flex;justify-content:space-between;align-items:center;background:#0f1118;border:1px solid #2a2e40;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:13px;color:#9ca3af;width:100%;text-align:left;margin-bottom:5px}
+.profile-pick.on{color:#fff;background:#11160d}
+.amounts-box{background:#0e1108;border:1px solid #2d3010;border-radius:11px;padding:13px;margin-bottom:10px}
+.amt-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px;color:#9ca3af}
+.amt-input{background:#141720;border:1px solid #2a2e40;border-radius:6px;padding:6px 8px;color:#dde1ea;font-size:14px;width:105px;text-align:right;outline:none}
+.amt-input.total{font-weight:700;color:#f0c040;font-size:15px;width:115px}
+.amt-input.pct{width:64px}
+.claim-result{font-size:12px;color:#10b981;font-weight:600;white-space:nowrap}
+.gst-hint{font-size:11px;color:#6b7280;margin-top:5px;line-height:1.4}
+.extracting-tag{background:#0d1a2d;border:1px solid #1e4060;color:#60a0e0;font-size:12px;padding:3px 9px;border-radius:11px}
+
+/* DONE / SAVING */
+.center{display:flex;align-items:center;justify-content:center;min-height:60vh}
+.done-card{text-align:center;background:#141720;border:1px solid #2a2e40;border-radius:18px;padding:40px 32px;max-width:320px;width:100%}
+.done-check{width:54px;height:54px;border-radius:50%;background:#071a10;border:2px solid #10b981;color:#10b981;font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.done-h2{font-size:24px;font-weight:800;color:#fff;margin:0 0 5px}
+.done-ref{color:#f0c040;font-size:13px;font-weight:600;margin:0 0 3px}
+.done-profile{color:#6b7280;font-size:13px;margin:0 0 12px}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.spin{font-size:40px;color:#f0c040;animation:spin 2s linear infinite;display:block;margin-bottom:14px}
+
+/* PROFILES */
+.page-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.page-h2{font-weight:800;font-size:21px;color:#fff;margin:0}
+.page-sub{color:#6b7280;font-size:14px;margin-bottom:18px}
+.profile-list{display:flex;flex-direction:column;gap:8px}
+.profile-card{background:#141720;border:1px solid #2a2e40;border-radius:11px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}
+.profile-card.on{border-color:var(--pc)}
+.pc-left{display:flex;align-items:center;gap:11px}
+.pc-icon{font-size:24px}
+.pc-name{font-weight:600;font-size:14px;color:#fff}
+.pc-meta{font-size:12px;color:#6b7280;margin-top:1px}
+.pc-tags{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
+.tag-ok{background:#071a10;border:1px solid #10b981;color:#10b981;font-size:10px;padding:1px 5px;border-radius:8px}
+.tag-warn{background:#1a1005;border:1px solid #f59e0b;color:#f59e0b;font-size:10px;padding:1px 5px;border-radius:8px}
+.pc-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.pc-btn{background:#1a1d28;border:1px solid #3a3e50;color:#dde1ea;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px}
+.pc-active{font-size:11px;color:#f0c040;font-weight:600;padding:3px 6px}
+.pc-del{border-color:#3a1a1a !important;color:#e85a4a !important}
+
+/* EDIT PROFILE */
+.ep-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.ep-col{display:flex;flex-direction:column;gap:11px}
+.ep-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:13px;border-top:1px solid #2a2e40}
+.icon-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.col-list{display:flex;flex-direction:column;gap:4px}
+.col-btn{display:flex;align-items:center;gap:7px;background:#0f1118;border:1px solid #2a2e40;border-radius:7px;padding:6px 10px;cursor:pointer;text-align:left;color:#dde1ea;font-size:13px;width:100%}
+.col-btn.on{background:#111905;border-color:#f0c040}
+.col-btn.locked{opacity:.5;cursor:not-allowed}
+.col-chk{width:13px;color:#f0c040;font-size:11px;flex-shrink:0}
+.col-locked{margin-left:auto;font-size:10px;color:#6b7280}
+.cats-ta{min-height:120px;resize:vertical}
+
+/* TEMPLATES */
+.tmpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.tmpl-card{background:#141720;border:1px solid #2a2e40;border-radius:11px;padding:15px;display:flex;flex-direction:column;gap:8px}
+.tmpl-icon{font-size:24px}
+.tmpl-name{font-weight:700;font-size:14px;color:#fff}
+.tmpl-desc{font-size:13px;color:#6b7280;line-height:1.4}
+.tmpl-deploy-btn{border:1px solid var(--tc);color:var(--tc);background:transparent;padding:6px 12px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;width:fit-content}
+.tmpl-deploy-btn:disabled{opacity:.4;cursor:not-allowed}
+.deploy-result{background:#071a10;border:1px solid #10b981;border-radius:11px;padding:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.dr-check{width:28px;height:28px;border-radius:50%;background:#0d3322;border:2px solid #10b981;color:#10b981;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.dr-use-btn{background:#10b981;color:#000;border:none;border-radius:7px;padding:7px 13px;font-weight:700;font-size:13px;cursor:pointer}
+.tcol-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tcol-card{background:#141720;border:1px solid #2a2e40;border-radius:9px;padding:12px}
+.tcol-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.col-tag{background:#0f1118;border:1px solid #2a2e40;color:#9ca3af;font-size:11px;padding:2px 5px;border-radius:4px}
+
+/* HISTORY DRAWER */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:80;justify-content:flex-end}
+.drawer-overlay.show{display:flex}
+.drawer{background:#111318;border-left:1px solid #2a2e40;width:min(400px,100vw);display:flex;flex-direction:column;overflow:hidden}
+.drawer-hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #2a2e40}
+.drawer-ttl{font-weight:700;font-size:15px;color:#fff}
+.drawer-list{flex:1;overflow-y:auto;padding:5px 0}
+.hist-row{padding:9px 16px;border-bottom:1px solid #1e2230}
+.hist-main{display:flex;justify-content:space-between;margin-bottom:3px}
+.hist-vendor{font-weight:600;font-size:14px;color:#fff}
+.hist-amt{font-weight:700;color:#f0c040}
+.hist-sub{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:11px;color:#6b7280}
+.tag-ato{background:#0d1a2d;border:1px solid #1e4060;color:#60a0e0;padding:1px 5px;border-radius:4px}
+.tag-claim{background:#101a10;border:1px solid #1e4010;color:#70c070;padding:1px 5px;border-radius:4px}
+.tag-profile{background:#141720;border:1px solid #2a2e40;padding:1px 5px;border-radius:4px}
+.drawer-clear{margin:9px 14px;background:none;border:1px solid #3a1a1a;color:#e85a4a;padding:7px;border-radius:7px;cursor:pointer;font-size:12px}
+
+/* SETTINGS */
+.code-block{background:#0f1118;border:1px solid #2a2e40;border-radius:6px;padding:8px 12px;font-family:monospace;font-size:12px;color:#f0c040;word-break:break-all;margin:6px 0}
+.settings-grid{display:flex;flex-direction:column;gap:13px;max-width:600px}
+
+/* ERR BANNER */
+.err-banner{background:#1a0a08;border:1px solid #5a1a10;border-radius:8px;padding:9px 12px;font-size:13px;color:#e85a4a;margin-bottom:11px}
+
+@media(max-width:660px){
+  .review-grid,.ep-grid,.tmpl-grid,.tcol-grid,.row2{grid-template-columns:1fr}
+  .preview-col{position:static}
+  .h1{font-size:26px}
+  .nav{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="logo" onclick="showView('home')">
+    <span class="logo-mark">◈</span>
+    <span class="logo-name">ReceiptVault</span>
+    <span class="logo-tag">AU</span>
+  </button>
+  <div class="nav-links">
+    <button class="nav-btn active" id="nav-home" onclick="showView('home')">Scan</button>
+    <button class="nav-btn" id="nav-profiles" onclick="showView('profiles')">Profiles</button>
+    <button class="nav-btn" id="nav-templates" onclick="showView('templates')">Templates</button>
+    <button class="nav-btn" id="nav-settings" onclick="showView('settings')">Settings</button>
+    <button class="nav-btn" id="nav-history" onclick="toggleHistory()">🗂 History</button>
+  </div>
+  <div id="auth-strip">
+    <span class="auth-warn" id="auth-no-creds">⚙ Add credentials in Settings</span>
+  </div>
+</nav>
+
+<!-- Auth error bar -->
+<div class="err-bar" id="auth-err-bar" style="display:none"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast" style="display:none"></div>
+
+<!-- Camera -->
+<div class="cam-overlay" id="cam-overlay">
+  <div class="cam-box">
+    <div class="cam-bar"><span>Position receipt in frame</span><button class="x-btn" onclick="stopCam()">✕</button></div>
+    <div class="cam-wrap"><video id="cam-video" autoplay playsinline></video><div class="scan-frame"></div></div>
+    <button class="shutter" onclick="snapPhoto()"><span class="shutter-dot"></span></button>
+  </div>
+</div>
+<canvas id="snap-canvas" style="display:none"></canvas>
+<input type="file" id="file-input" accept="image/*,application/pdf" style="display:none" onchange="onFileSelect(event)">
+
+<!-- History Drawer -->
+<div class="drawer-overlay" id="history-drawer">
+  <div class="drawer">
+    <div class="drawer-hdr"><span class="drawer-ttl">🗂 Receipt History</span><button class="x-btn" onclick="toggleHistory()">✕</button></div>
+    <div style="padding:10px 14px;border-bottom:1px solid #2a2e40"><input class="input" id="hist-search" placeholder="Search vendor, category, ATO code..." oninput="renderHistory()"></div>
+    <div class="drawer-list" id="hist-list"></div>
+    <button class="drawer-clear" onclick="clearHistory()">Clear History</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- HOME -->
+<div id="view-home">
+  <div class="home">
+    <div class="hero">
+      <h1 class="h1">Scan. Sort. Save.</h1>
+      <p class="hero-sub">Receipt scanner straight to <em>your</em> Google Drive &amp; Sheets</p>
+    </div>
+    <div class="callout" id="home-callout-creds" style="display:none">
+      <span>⚙</span><span>Add your credentials in <button class="link-btn" onclick="showView('settings')">Settings</button> then click <strong>Connect Google</strong>.</span>
+    </div>
+    <div class="callout" id="home-callout-connect" style="display:none">
+      <span>🔗</span><span>Click <strong>Connect Google</strong> in the top bar to link your Drive and Sheets.</span>
+    </div>
+    <div class="callout warn" id="home-callout-queue" style="display:none">
+      <span>⏳</span><span id="queue-msg"></span>
+    </div>
+    <div id="profile-strip" style="margin-bottom:13px;display:none">
+      <div class="label" style="margin-bottom:6px">Saving to:</div>
+      <div class="chips" id="profile-chips"></div>
+    </div>
+    <div class="capture-row">
+      <button class="cap-btn primary" onclick="startCam()">
+        <span class="cap-icon">📷</span><span class="cap-label">Take Photo</span><span class="cap-hint">Camera scan</span>
+      </button>
+      <button class="cap-btn" onclick="document.getElementById('file-input').click()">
+        <span class="cap-icon">📎</span><span class="cap-label">Upload File</span><span class="cap-hint">JPG / PNG / PDF</span>
+      </button>
+    </div>
+    <div class="feats">
+      <div class="feat"><span class="tick">✓</span>AI extracts all data automatically</div>
+      <div class="feat"><span class="tick">✓</span>PDF invoices supported</div>
+      <div class="feat"><span class="tick">✓</span>Maps to ATO D1–D14 schedule categories</div>
+      <div class="feat"><span class="tick">✓</span>Claim % for partial deductions (phone, car, laptop)</div>
+      <div class="feat"><span class="tick">✓</span>Evidence type logged per receipt</div>
+      <div class="feat"><span class="tick">✓</span>Auto-calculates GST and claimable amount</div>
+      <div class="feat"><span class="tick">✓</span>Offline queue — never lose a receipt</div>
+      <div class="feat"><span class="tick">✓</span>Duplicate detection before saving</div>
+      <div class="feat"><span class="tick">✓</span>Multiple profiles: personal tax, business, projects</div>
+      <div class="feat"><span class="tick">✓</span>Financial year auto-tagged for ATO</div>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEW -->
+<div id="view-review" style="display:none">
+  <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="back-btn" onclick="goHome()">← Discard</button>
+    <h2 style="font-weight:700;font-size:19px;color:#fff;margin:0">Review &amp; Save</h2>
+    <span class="extracting-tag" id="extracting-tag" style="display:none">⟳ Extracting...</span>
+  </div>
+  <div class="err-banner" id="extract-err" style="display:none"></div>
+  <div class="review-grid">
+    <div class="preview-col">
+      <img id="preview-img" src="" alt="Receipt" class="preview-img" style="display:none">
+      <div class="card">
+        <div class="dest-title">Save to Profile</div>
+        <div id="profile-picks"></div>
+        <p class="warn-text" id="no-profile-warn" style="display:none">No profiles — <button class="link-btn" onclick="showView('templates')">create one</button></p>
+      </div>
+    </div>
+    <div id="form-col">
+      <div class="row2">
+        <div class="fg"><label class="label">Ref #</label><input class="input" id="f-refNumber"></div>
+        <div class="fg"><label class="label">Date</label><input class="input" type="date" id="f-date"></div>
+      </div>
+      <div class="fg"><label class="label">Vendor / Supplier</label><input class="input" id="f-vendor"></div>
+      <div class="row2">
+        <div class="fg"><label class="label">Invoice / Receipt #</label><input class="input" id="f-invoiceNumber"></div>
+        <div class="fg"><label class="label">ABN</label><input class="input" id="f-abn" placeholder="Optional"></div>
+      </div>
+      <div class="fg"><label class="label">ATO Schedule</label><select class="input" id="f-atoCategory"></select></div>
+      <div class="fg"><label class="label">Category</label><select class="input" id="f-category"></select></div>
+      <div class="fg"><label class="label">Description</label><input class="input" id="f-description"></div>
+      <div class="fg"><label class="label">Evidence Type</label><select class="input" id="f-evidenceType"></select></div>
+      <div class="row2">
+        <div class="fg"><label class="label">Payment Method</label><select class="input" id="f-paymentMethod"></select></div>
+        <div class="fg"><label class="label">Tax Deductible?</label><select class="input" id="f-taxDeductible"></select></div>
+      </div>
+      <div class="fg" id="f-project-group" style="display:none"><label class="label">Project / Job Code</label><input class="input" id="f-project"></div>
+      <div class="fg" id="f-client-group" style="display:none"><label class="label">Client</label><input class="input" id="f-client"></div>
+      <div class="amounts-box">
+        <div class="amt-row"><label>Subtotal (ex GST)</label><input class="amt-input" type="number" step="0.01" id="f-subtotal" oninput="calcFromSub()"></div>
+        <div class="amt-row"><label>GST (10%)</label><input class="amt-input" type="number" step="0.01" id="f-gst" oninput="calcFromSub()"></div>
+        <div class="amt-row"><label style="font-weight:700;color:#fff">Total</label><input class="amt-input total" type="number" step="0.01" id="f-total" oninput="calcFromTotal()"></div>
+        <div class="amt-row" style="margin-top:8px;border-top:1px solid #2d3010;padding-top:8px">
+          <label>Work use %</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input class="amt-input pct" type="number" min="0" max="100" id="f-claimPct" oninput="updateClaim()">
+            <span class="claim-result" id="claim-result"></span>
+          </div>
+        </div>
+        <p class="gst-hint">💡 Edit Total to auto-calc GST &amp; Subtotal. Set work % for partial claims.</p>
+      </div>
+      <div class="fg"><label class="label">Notes</label><textarea class="input" id="f-notes" rows="2"></textarea></div>
+      <button class="save-btn" id="save-btn" onclick="doSave()">💾 Save Receipt</button>
+      <button class="queue-btn" onclick="saveToQueue()">📥 Save to offline queue</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVING -->
+<div id="view-saving" style="display:none">
+  <div class="center">
+    <div class="done-card">
+      <span class="spin">◈</span>
+      <p id="saving-msg" style="color:#6b7280;font-size:14px;margin:0"></p>
+    </div>
+  </div>
+</div>
+
+<!-- DONE -->
+<div id="view-done" style="display:none">
+  <div class="center">
+    <div class="done-card">
+      <div class="done-check">✓</div>
+      <h2 class="done-h2">Saved!</h2>
+      <p class="done-ref" id="done-ref"></p>
+      <p class="done-profile" id="done-profile"></p>
+      <a id="done-link" href="#" target="_blank" style="display:none;font-size:13px;color:#f0c040;display:block;margin-bottom:4px">View in Drive ↗</a>
+      <button class="save-btn" style="margin-top:16px" onclick="goHome()">Scan Another</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILES -->
+<div id="view-profiles" style="display:none">
+  <div class="page-top"><h2 class="page-h2">Profiles</h2><button class="add-btn" onclick="newProfile()">+ New Profile</button></div>
+  <p class="page-sub">Each profile saves to its own Drive folder and spreadsheet. Switch profiles per receipt.</p>
+  <div class="profile-list" id="profile-list"></div>
+</div>
+
+<!-- EDIT PROFILE -->
+<div id="view-editProfile" style="display:none">
+  <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px">
+    <button class="back-btn" onclick="showView('profiles')">← Profiles</button>
+    <h2 style="font-weight:700;font-size:19px;color:#fff;margin:0" id="ep-title">Edit Profile</h2>
+  </div>
+  <div class="ep-grid">
+    <div class="ep-col">
+      <div class="card">
+        <div class="section-title">Basic Info</div>
+        <div class="fg"><label class="label">Profile Name</label><input class="input" id="ep-name" placeholder="e.g. Personal Tax 2025"></div>
+        <div class="fg"><label class="label">Icon</label><div class="icon-row" id="ep-icons"></div></div>
+        <div class="fg"><label class="label">Colour</label><div class="icon-row" id="ep-colors"></div></div>
+      </div>
+      <div class="card">
+        <div class="section-title">Google Destination</div>
+        <p class="warn-text" id="ep-auth-warn" style="display:none">⚙ Connect Google first (top bar)</p>
+        <div class="fg"><label class="label">Drive Folder</label><div class="search-select-wrap"><input class="input" id="ep-folder-search" placeholder="Search folders..." oninput="filterSearchSelect('ep-folder','ep-folder-search',gFolders)" autocomplete="off"><div class="search-select-list" id="ep-folder-list"></div><input type="hidden" id="ep-folder"></div></div>
+        <div class="fg"><label class="label">Spreadsheet</label><div class="search-select-wrap"><input class="input" id="ep-sheet-search" placeholder="Search spreadsheets..." oninput="filterSearchSelect('ep-sheet','ep-sheet-search',gSheets)" autocomplete="off"><div class="search-select-list" id="ep-sheet-list"></div><input type="hidden" id="ep-sheet"></div></div>
+        <div class="fg" id="ep-tab-group"><label class="label">Sheet Tab</label><select class="input" id="ep-tab"></select></div>
+      </div>
+    </div>
+    <div class="ep-col">
+      <div class="card">
+        <div class="section-title">Columns to Capture</div>
+        <p class="hint" style="margin-bottom:8px">Toggle fields logged. Grey = always included.</p>
+        <div class="col-list" id="ep-columns"></div>
+      </div>
+      <div class="card">
+        <div class="section-title">Categories</div>
+        <p class="hint" style="margin-bottom:8px">One per line — shown in dropdown when scanning.</p>
+        <textarea class="input cats-ta" id="ep-categories" rows="10"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="ep-actions">
+    <button class="back-btn" onclick="showView('profiles')">Cancel</button>
+    <button class="save-btn sm" onclick="saveProfile()">Save Profile</button>
+  </div>
+</div>
+
+<!-- TEMPLATES -->
+<div id="view-templates" style="display:none">
+  <div class="page-top"><h2 class="page-h2">Templates</h2></div>
+  <p class="page-sub">Deploy a ready-made Google Sheet to your Drive in one click.</p>
+  <div class="callout warn" id="tmpl-no-creds" style="display:none">⚙ Add Google credentials in <button class="link-btn" onclick="showView('settings')">Settings</button> first.</div>
+  <div class="callout" id="tmpl-no-auth" style="display:none">
+    <span>🔗</span><span>Connect Google first: <button class="connect-btn" style="margin-left:8px" onclick="connectGoogle()">Connect Google Now</button></span>
+  </div>
+  <div id="deploy-result" style="display:none" class="deploy-result">
+    <div style="display:flex;align-items:center;gap:9px;font-size:14px;color:#dde1ea">
+      <div class="dr-check">✓</div>
+      <div><strong id="deploy-name"></strong> created<br><a id="deploy-link" href="#" target="_blank" class="link-btn">Open in Sheets ↗</a></div>
+    </div>
+    <button class="dr-use-btn" onclick="applyDeployedSheet()">+ Add as Profile</button>
+  </div>
+  <div class="tmpl-grid" id="tmpl-grid"></div>
+  <h3 style="font-weight:700;font-size:14px;color:#fff;margin-bottom:10px">Columns included per template</h3>
+  <div class="tcol-grid" id="tcol-grid"></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="view-settings" style="display:none">
+  <h2 class="page-h2" style="margin-bottom:18px">Settings</h2>
+  <div class="settings-grid">
+    <div class="card">
+      <div class="section-title">Anthropic API Key (for AI extraction)</div>
+      <p class="hint" style="margin-bottom:10px">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. New accounts get $5 free credit.</p>
+      <div class="fg"><label class="label">Anthropic API Key</label><input class="input" type="password" id="s-anthropic-key" placeholder="sk-ant-..."></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Google API Credentials</div>
+      <p class="hint" style="margin-bottom:10px">Create a project at <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a>, enable Drive &amp; Sheets APIs, create an OAuth 2.0 Client ID (Web application). Add <code style="background:#1a1d28;padding:1px 4px;border-radius:3px;color:#f0c040">http://localhost</code> and <code style="background:#1a1d28;padding:1px 4px;border-radius:3px;color:#f0c040">file://</code> — OR your hosted URL — to Authorised JavaScript origins.</p>
+      <div class="fg"><label class="label">OAuth Client ID</label><input class="input" id="s-client-id" placeholder="xxx.apps.googleusercontent.com"></div>
+      <div class="fg"><label class="label">API Key</label><input class="input" id="s-api-key" placeholder="AIza..."></div>
+      <button class="save-btn sm" onclick="saveSettings()">Save Credentials</button>
+    </div>
+    <div class="card">
+      <div class="section-title">How to use this file</div>
+      <p class="hint">1. Save this HTML file to your computer<br>2. Open it in Chrome by double-clicking it<br>3. Add your Anthropic API key and Google credentials above<br>4. Click <strong>Connect Google</strong> — a sign-in pop-up will appear<br>5. Go to Templates, deploy your first sheet, then start scanning</p>
+    </div>
+    <div class="card">
+      <div class="section-title">Link to P&amp;L or BAS</div>
+      <p class="hint">In any other Google Sheet:</p>
+      <div class="code-block">=IMPORTRANGE("YOUR_SHEET_ID","Personal Deductions!A:Z")</div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+const ALL_COLS=[
+  {id:"refNumber",label:"Ref #",always:true},
+  {id:"date",label:"Date",always:true},
+  {id:"vendor",label:"Vendor / Supplier",always:true},
+  {id:"total",label:"Total Amount",always:true},
+  {id:"subtotal",label:"Subtotal (ex GST)",always:false},
+  {id:"gst",label:"GST",always:false},
+  {id:"claimPct",label:"Claim % (work use)",always:false},
+  {id:"claimAmount",label:"Claim Amount",always:false},
+  {id:"atoCategory",label:"ATO Schedule (D1-D14)",always:false},
+  {id:"category",label:"Category",always:false},
+  {id:"description",label:"Description",always:false},
+  {id:"evidenceType",label:"Evidence Type",always:false},
+  {id:"invoiceNumber",label:"Invoice / Receipt #",always:false},
+  {id:"paymentMethod",label:"Payment Method",always:false},
+  {id:"abn",label:"ABN",always:false},
+  {id:"financialYear",label:"Financial Year",always:false},
+  {id:"taxDeductible",label:"Tax Deductible?",always:false},
+  {id:"project",label:"Project / Job Code",always:false},
+  {id:"billable",label:"Billable?",always:false},
+  {id:"client",label:"Client",always:false},
+  {id:"notes",label:"Notes",always:false},
+  {id:"receiptLink",label:"Receipt Link",always:true},
+];
+const ATO_CATS=["D1 - Work-related car expenses","D2 - Work-related travel expenses","D3 - Clothing, laundry and dry-cleaning","D4 - Work-related self-education","D5 - Home office (fixed rate 70c/hr)","D5 - Home office (actual cost)","D5 - Phone and internet (work %)","D5 - Tools and equipment under $300","D5 - Tools and equipment over $300","D5 - Union and professional membership","D5 - Professional licence / registration","D5 - Subscriptions and trade publications","D5 - Stationery and office supplies","D5 - Sun protection (outdoor workers)","D5 - COVID RAT tests (work required)","D5 - Other work-related expenses","D6 - Low-value pool deduction","D7 - Interest deductions (investment loan)","D8 - Dividend and investment deductions","D9 - Gifts and donations (DGR)","D10 - Cost of managing tax affairs","D12 - Personal super contributions","D14 - Income protection insurance","Rental - Rental property expenses","Other - Miscellaneous deduction"];
+const PERSONAL_CATS=["Car and Vehicle","Work Travel and Accommodation","Clothing and Uniform","Laundry and Dry-Cleaning","Self-Education / Course Fees","Textbooks and Study Materials","Home Office","Phone and Internet","Tools and Equipment","Professional Membership / Union","Licence and Registration Fees","Trade Publications and Subscriptions","Stationery and Office Supplies","Donations (DGR)","Tax Agent Fees","Income Protection Insurance","Personal Super Contribution","Investment Expenses","Rental Property","Sun Protection","Working With Children Check","Other Work Expense"];
+const EVIDENCE_TYPES=["Tax Invoice / Receipt","Bank Statement","Logbook / Odometer Record","Diary / Timesheet","Employer Letter / Policy","Boarding Pass / Booking Confirmation","Insurance Certificate","Depreciation Schedule","Notice of Intent (super)","Annual Statement","Donation Receipt (DGR)","Rideshare / Toll Statement","Other"];
+const TEMPLATES={
+  personal:{name:"Personal Tax (ATO)",icon:"🧾",color:"#10b981",description:"Comprehensive ATO individual return — D1-D14 schedules, claim %, evidence type.",columns:["refNumber","date","vendor","abn","atoCategory","category","description","total","gst","subtotal","claimPct","claimAmount","taxDeductible","evidenceType","invoiceNumber","paymentMethod","financialYear","notes","receiptLink"],defaultTab:"Personal Deductions",summaryTab:true},
+  business:{name:"Business Expenses",icon:"🏢",color:"#3b82f6",description:"Full business expense tracking with GST, ABN and categories for BAS and tax return.",columns:["refNumber","date","vendor","abn","category","description","subtotal","gst","total","paymentMethod","invoiceNumber","financialYear","taxDeductible","notes","receiptLink"],defaultTab:"Expenses",summaryTab:true},
+  workExpenses:{name:"Work Expenses",icon:"💼",color:"#f59e0b",description:"Employee reimbursements and work-related purchases.",columns:["refNumber","date","vendor","description","total","paymentMethod","category","billable","notes","receiptLink"],defaultTab:"Work Expenses",summaryTab:false},
+  project:{name:"Project Tracking",icon:"📐",color:"#8b5cf6",description:"Job costing — link receipts to specific projects or clients.",columns:["refNumber","date","vendor","description","total","gst","subtotal","project","client","billable","paymentMethod","notes","receiptLink"],defaultTab:"Project Costs",summaryTab:false},
+};
+const CATS_BY_TYPE={personal:PERSONAL_CATS,business:["Advertising","Bank Fees","Computer and Software","Equipment","Insurance","Meals and Entertainment","Motor Vehicle","Office Supplies","Professional Services","Rent and Utilities","Repairs","Subscriptions","Travel","Wages","Other"],workExpenses:["Meals","Travel","Accommodation","Equipment","Training","Parking","Other"],project:["Materials","Labour","Subcontractor","Equipment Hire","Travel","Permits","Other"]};
+
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+const lsGet=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)??'null')??d}catch{return d}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+const QKEY="rv_q4";
+const getQueue=()=>lsGet(QKEY,[]);
+const addQueue=(i)=>lsSet(QKEY,[...getQueue(),{...i,queuedAt:Date.now()}]);
+const removeQueue=(id)=>lsSet(QKEY,getQueue().filter(i=>i.id!==id));
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let creds=lsGet("rv_creds",{});
+let profiles=lsGet("rv_profiles",[]);
+let activeProfileId=lsGet("rv_activeProfile",null);
+let history=lsGet("rv_history",[]);
+let authStatus="idle";
+let gFolders=[],gSheets=[];
+let currentImage=null;
+let editingProfileId=null;
+let deployedResult=null;
+let camStream=null;
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+const genRef=()=>{const d=new Date();return `REC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}-${Math.floor(Math.random()*9000+1000)}`};
+const todayStr=()=>new Date().toISOString().split("T")[0];
+const fyStr=(ds)=>{const d=ds?new Date(ds):new Date(),y=d.getFullYear(),m=d.getMonth()+1;return m>=7?`FY${y}/${y+1}`:`FY${y-1}/${y}`};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const enc=encodeURIComponent;
+const getActive=()=>profiles.find(p=>p.id===activeProfileId)||profiles[0]||null;
+
+function showToast(msg,type="success"){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.className="toast "+type;t.style.display="block";
+  clearTimeout(t._timer);t._timer=setTimeout(()=>t.style.display="none",3500);
+}
+
+// ─── VIEW MANAGEMENT ──────────────────────────────────────────────────────────
+function showView(v){
+  ["home","review","saving","done","profiles","editProfile","templates","settings"].forEach(x=>{
+    document.getElementById("view-"+x).style.display=x===v?"block":"none";
+    const nb=document.getElementById("nav-"+x);if(nb){nb.classList.toggle("active",x===v);}
+  });
+  if(v==="templates")renderTemplates();
+  if(v==="profiles")renderProfiles();
+  if(v==="home")renderHomeState();
+}
+
+// ─── HOME STATE ───────────────────────────────────────────────────────────────
+function renderHomeState(){
+  const hasCreds=!!(creds.clientId);
+  document.getElementById("home-callout-creds").style.display=hasCreds?"none":"flex";
+  document.getElementById("home-callout-connect").style.display=(hasCreds&&authStatus==="idle")?"flex":"none";
+  const q=getQueue();
+  const qc=document.getElementById("home-callout-queue");
+  qc.style.display=q.length?"flex":"none";
+  if(q.length)document.getElementById("queue-msg").innerHTML=`<strong>${q.length} receipt(s) queued</strong> — not yet in Google. <button class="link-btn" onclick="retryQueue()">Retry now</button>`;
+  const strip=document.getElementById("profile-strip");
+  strip.style.display=profiles.length?"block":"none";
+  if(profiles.length){
+    const chips=document.getElementById("profile-chips");
+    chips.innerHTML=profiles.map(p=>`<button class="chip${activeProfileId===p.id?" on":""}" style="--cc:${p.color}" onclick="setActiveProfile('${p.id}')">${p.icon} ${p.name}</button>`).join("");
+  }
+  updateAuthStrip();
+}
+
+function setActiveProfile(id){
+  activeProfileId=id;lsSet("rv_activeProfile",id);renderHomeState();
+  document.getElementById("profile-chips").querySelectorAll(".chip").forEach((c,i)=>{
+    c.classList.toggle("on",profiles[i]?.id===id);
+  });
+}
+
+function updateAuthStrip(){
+  const strip=document.getElementById("auth-strip");
+  const hasCreds=!!(creds.clientId);
+  if(!hasCreds){strip.innerHTML='<span class="auth-warn">⚙ Add credentials in Settings</span>';return;}
+  if(authStatus==="idle")strip.innerHTML=`<button class="connect-btn" onclick="connectGoogle()">🔗 Connect Google</button>`;
+  else if(authStatus==="loading")strip.innerHTML='<span class="auth-warn">Connecting...</span>';
+  else if(authStatus==="ok")strip.innerHTML='<span class="auth-ok">✓ Google Connected</span>';
+  else if(authStatus==="error")strip.innerHTML=`<button class="connect-btn error" onclick="connectGoogle()">⚠ Retry Connect</button>`;
+}
+
+// ─── GOOGLE AUTH ──────────────────────────────────────────────────────────────
+let _tokenClient=null,_accessToken=null,_tokenExpiry=0;
+const SCOPES="https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets";
+
+async function waitForGIS(){
+  if(window.google?.accounts?.oauth2)return;
+  await new Promise((res,rej)=>{
+    let tries=0;
+    const iv=setInterval(()=>{
+      tries++;
+      if(window.google?.accounts?.oauth2){clearInterval(iv);res();}
+      else if(tries>50){clearInterval(iv);rej(new Error("Google Identity Services script did not load. Make sure you are opening this file in Chrome and are connected to the internet."));}
+    },100);
+  });
+}
+
+async function getToken(){
+  if(_accessToken&&Date.now()<_tokenExpiry-60000)return _accessToken;
+  if(!_tokenClient){
+    await waitForGIS();
+    _tokenClient=window.google.accounts.oauth2.initTokenClient({client_id:creds.clientId,scope:SCOPES,callback:()=>{}});
+  }
+  return new Promise((res,rej)=>{
+    _tokenClient.callback=r=>{
+      if(r.error)rej(new Error(r.error+": "+(r.error_description||"")));
+      else{_accessToken=r.access_token;_tokenExpiry=Date.now()+(r.expires_in||3600)*1000;res(_accessToken);}
+    };
+    _tokenClient.requestAccessToken({prompt:""});
+  });
+}
+
+function resetAuth(){_tokenClient=null;_accessToken=null;_tokenExpiry=0;}
+
+async function connectGoogle(){
+  if(!creds.clientId){showToast("Add your Google Client ID in Settings first","error");return;}
+  authStatus="loading";updateAuthStrip();
+  document.getElementById("auth-err-bar").style.display="none";
+  try{
+    const apiFetch=makeApiFetch();
+    const[f,s]=await Promise.all([listFolders(apiFetch),listSpreadsheets(apiFetch)]);
+    gFolders=f;gSheets=s;
+    authStatus="ok";updateAuthStrip();showToast("Connected to Google Drive!");
+    renderHomeState();
+  }catch(e){
+    authStatus="error";updateAuthStrip();
+    const bar=document.getElementById("auth-err-bar");
+    bar.style.display="block";
+    bar.textContent="Google connection error: "+e.message;
+  }
+}
+
+const DRIVE="https://www.googleapis.com/drive/v3";
+const SHEETS="https://sheets.googleapis.com/v4";
+
+function makeApiFetch(){
+  return async(url,opts={})=>{
+    const t=await getToken();
+    const r=await fetch(url,{...opts,headers:{Authorization:`Bearer ${t}`,"Content-Type":"application/json",...(opts.headers||{})}});
+    if(r.status===401){_accessToken=null;const t2=await getToken();return fetch(url,{...opts,headers:{Authorization:`Bearer ${t2}`,"Content-Type":"application/json",...(opts.headers||{})}});}
+    return r;
+  };
+}
+
+async function listFolders(af){const r=await af(`${DRIVE}/files?q=mimeType%3D'application%2Fvnd.google-apps.folder'+and+trashed%3Dfalse&fields=files(id,name)&orderBy=name&pageSize=50`);const d=await r.json();if(d.error)throw new Error(d.error.message);return d.files||[];}
+async function listSpreadsheets(af){const r=await af(`${DRIVE}/files?q=mimeType%3D'application%2Fvnd.google-apps.spreadsheet'+and+trashed%3Dfalse&fields=files(id,name)&orderBy=name&pageSize=100`);const d=await r.json();if(d.error)throw new Error(d.error.message);return d.files||[];}
+async function listTabs(af,id){const r=await af(`${SHEETS}/spreadsheets/${id}?fields=sheets.properties`);const d=await r.json();if(d.error)throw new Error(d.error.message);return(d.sheets||[]).map(s=>s.properties.title);}
+
+async function uploadFile(folderId,filename,base64,mime){
+  const t=await getToken();const bnd="rv_bnd";
+  const meta=JSON.stringify({name:filename,...(folderId?{parents:[folderId]}:{})});
+  const body=`--${bnd}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${bnd}\r\nContent-Type: ${mime}\r\nContent-Transfer-Encoding: base64\r\n\r\n${base64}\r\n--${bnd}--`;
+  const r=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",{method:"POST",headers:{Authorization:`Bearer ${t}`,"Content-Type":`multipart/related; boundary=${bnd}`},body});
+  const d=await r.json();if(d.error)throw new Error(d.error.message);return d;
+}
+
+async function createSpreadsheet(name,folderId,columns,tabName,summaryTab){
+  const af=makeApiFetch();
+  const r=await af(`${SHEETS}/spreadsheets`,{method:"POST",body:JSON.stringify({properties:{title:name},sheets:[{properties:{title:tabName,sheetId:0}},...(summaryTab?[{properties:{title:"Summary",sheetId:1}}]:[])]})});
+  const ss=await r.json();if(ss.error)throw new Error(ss.error.message);
+  const ssId=ss.spreadsheetId;
+  const headers=columns.map(cid=>{const c=ALL_COLS.find(x=>x.id===cid);return c?c.label:cid;});
+  await af(`${SHEETS}/spreadsheets/${ssId}/values/${enc(tabName+"!A1")}:append?valueInputOption=USER_ENTERED`,{method:"POST",body:JSON.stringify({values:[headers]})});
+  await af(`${SHEETS}/spreadsheets/${ssId}:batchUpdate`,{method:"POST",body:JSON.stringify({requests:[{repeatCell:{range:{sheetId:0,startRowIndex:0,endRowIndex:1},cell:{userEnteredFormat:{textFormat:{bold:true},backgroundColor:{red:.08,green:.1,blue:.13}}},fields:"userEnteredFormat"}},{updateSheetProperties:{properties:{sheetId:0,gridProperties:{frozenRowCount:1}},fields:"gridProperties.frozenRowCount"}}]})});
+  if(summaryTab){
+    const ti=columns.indexOf("total"),gi=columns.indexOf("gst"),ci=columns.indexOf("claimAmount");
+    const col=i=>i>=0?String.fromCharCode(65+i):"A";
+    await af(`${SHEETS}/spreadsheets/${ssId}/values/${enc("Summary!A1")}:append?valueInputOption=USER_ENTERED`,{method:"POST",body:JSON.stringify({values:[[`ATO Summary - ${fyStr()}`,""],["Total Receipts",`=COUNTA('${tabName}'!A2:A)`],["Total Amount",`=SUM('${tabName}'!${col(ti)}2:${col(ti)})`],["Total GST",gi>=0?`=SUM('${tabName}'!${col(gi)}2:${col(gi)})`: "N/A"],["Total Claimable",ci>=0?`=SUM('${tabName}'!${col(ci)}2:${col(ci)})`: "See Total"],["",""],["By ATO Schedule","Total $"],["D1 Car",`=SUMIF('${tabName}'!I:I,"D1*",'${tabName}'!${col(ti)}:${col(ti)})`],["D2 Travel",`=SUMIF('${tabName}'!I:I,"D2*",'${tabName}'!${col(ti)}:${col(ti)})`],["D3 Clothing",`=SUMIF('${tabName}'!I:I,"D3*",'${tabName}'!${col(ti)}:${col(ti)})`],["D4 Self-Education",`=SUMIF('${tabName}'!I:I,"D4*",'${tabName}'!${col(ti)}:${col(ti)})`],["D5 Other Work",`=SUMIF('${tabName}'!I:I,"D5*",'${tabName}'!${col(ti)}:${col(ti)})`],["D9 Donations",`=SUMIF('${tabName}'!I:I,"D9*",'${tabName}'!${col(ti)}:${col(ti)})`],["D10 Tax Affairs",`=SUMIF('${tabName}'!I:I,"D10*",'${tabName}'!${col(ti)}:${col(ti)})`],["D14 Income Protection",`=SUMIF('${tabName}'!I:I,"D14*",'${tabName}'!${col(ti)}:${col(ti)})`]]})});
+  }
+  if(folderId){const mv=await af(`${DRIVE}/files/${ssId}?addParents=${folderId}&fields=id`,{method:"PATCH",body:JSON.stringify({})});const mvd=await mv.json();if(mvd.error)throw new Error("Created but couldn't move to folder: "+mvd.error.message);}
+  return{id:ssId,name,url:`https://docs.google.com/spreadsheets/d/${ssId}`};
+}
+
+async function appendRow(af,ssId,tabName,columns,data,receiptLink){
+  const check=await af(`${SHEETS}/spreadsheets/${ssId}/values/${enc(tabName+"!A1:A1")}`);
+  const cd=await check.json();
+  if(!cd.values){
+    const headers=columns.map(cid=>{const c=ALL_COLS.find(x=>x.id===cid);return c?c.label:cid;});
+    await af(`${SHEETS}/spreadsheets/${ssId}/values/${enc(tabName+"!A1")}:append?valueInputOption=USER_ENTERED`,{method:"POST",body:JSON.stringify({values:[headers]})});
+  }
+  const row=columns.map(cid=>{
+    if(cid==="receiptLink")return receiptLink?`=HYPERLINK("${receiptLink}","View")`:"";
+    if(cid==="financialYear")return fyStr(data.date);
+    if(cid==="claimAmount"){const p=parseFloat(data.claimPct)||100,t=parseFloat(data.total)||0;return((p/100)*t).toFixed(2);}
+    return data[cid]??"";
+  });
+  const ar=await af(`${SHEETS}/spreadsheets/${ssId}/values/${enc(tabName+"!A:Z")}:append?valueInputOption=USER_ENTERED`,{method:"POST",body:JSON.stringify({values:[row]})});
+  const ard=await ar.json();if(ard.error)throw new Error(ard.error.message);
+}
+
+// ─── PDF TO IMAGE ─────────────────────────────────────────────────────────────
+async function pdfToImg(b64){
+  if(!window.pdfjsLib){
+    await new Promise(res=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";s.onload=res;document.head.appendChild(s);});
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+  const bin=atob(b64),bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  const pdf=await window.pdfjsLib.getDocument({data:bytes}).promise;
+  const page=await pdf.getPage(1);
+  const vp=page.getViewport({scale:2});
+  const c=document.createElement("canvas");c.width=vp.width;c.height=vp.height;
+  await page.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;
+  return c.toDataURL("image/jpeg",.92).split(",")[1];
+}
+
+// ─── AI EXTRACTION ────────────────────────────────────────────────────────────
+async function extractReceipt(b64,mime){
+  let imgB64=b64,imgMime=mime;
+  if(mime==="application/pdf"){imgB64=await pdfToImg(b64);imgMime="image/jpeg";}
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":creds.anthropicKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:imgMime,data:imgB64}},{type:"text",text:`Extract receipt/invoice data. Return ONLY valid JSON, no markdown:\n{"vendor":"","date":"YYYY-MM-DD","invoiceNumber":"","description":"","subtotal":0,"gst":0,"total":0,"paymentMethod":"Card","abn":"","notes":"","category":"","atoCategory":""}\nAustralian GST=10%. If total shown but no GST: gst=total/11, subtotal=total-gst. No GST on food/medical: gst=0. Numbers only, no $ signs.`}]}]}),
+  });
+  if(!res.ok)throw new Error("Claude API "+res.status);
+  const d=await res.json();
+  const txt=d.content.find(b=>b.type==="text")?.text||"{}";
+  return JSON.parse(txt.replace(/```json|```/g,"").trim());
+}
+
+// ─── CAMERA ───────────────────────────────────────────────────────────────────
+async function startCam(){
+  document.getElementById("cam-overlay").classList.add("show");
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1920}}});
+    document.getElementById("cam-video").srcObject=camStream;
+  }catch{alert("Camera unavailable — use file upload.");stopCam();}
+}
+function stopCam(){
+  camStream?.getTracks().forEach(t=>t.stop());camStream=null;
+  document.getElementById("cam-overlay").classList.remove("show");
+}
+function snapPhoto(){
+  const v=document.getElementById("cam-video"),c=document.getElementById("snap-canvas");
+  c.width=v.videoWidth;c.height=v.videoHeight;
+  c.getContext("2d").drawImage(v,0,0);
+  const url=c.toDataURL("image/jpeg",.92);
+  stopCam();processImage(url.split(",")[1],"image/jpeg",url);
+}
+function onFileSelect(e){
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{const url=ev.target.result;processImage(url.split(",")[1],f.type,url);};
+  reader.readAsDataURL(f);e.target.value="";
+}
+
+// ─── REVIEW ───────────────────────────────────────────────────────────────────
+async function processImage(b64,mime,url){
+  currentImage={b64,mime,url};
+  showView("review");
+  populateReviewForm({});
+  document.getElementById("preview-img").src=url;
+  document.getElementById("preview-img").style.display="block";
+  document.getElementById("extracting-tag").style.display="inline";
+  document.getElementById("extract-err").style.display="none";
+  renderProfilePicks();
+  try{
+    const ex=await extractReceipt(b64,mime);
+    const sub=parseFloat(ex.subtotal)||0,g=parseFloat(ex.gst)||0,tot=parseFloat(ex.total)||(sub+g);
+    populateReviewForm({vendor:ex.vendor||"",date:ex.date||todayStr(),invoiceNumber:ex.invoiceNumber||"",description:ex.description||"",subtotal:sub.toFixed(2),gst:g.toFixed(2),total:tot.toFixed(2),paymentMethod:ex.paymentMethod||"Card",category:ex.category||"",atoCategory:ex.atoCategory||"",abn:ex.abn||"",notes:ex.notes||""});
+  }catch(e){
+    document.getElementById("extract-err").style.display="block";
+    document.getElementById("extract-err").textContent="⚠ AI extraction failed — fill in manually. ("+e.message+")";
+  }
+  document.getElementById("extracting-tag").style.display="none";
+  updateClaim();
+}
+
+function populateReviewForm(d){
+  const prof=getActive();
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||"";};
+  set("f-refNumber",d.refNumber||genRef());
+  set("f-date",d.date||todayStr());
+  set("f-vendor",d.vendor||"");
+  set("f-invoiceNumber",d.invoiceNumber||"");
+  set("f-abn",d.abn||"");
+  set("f-description",d.description||"");
+  set("f-notes",d.notes||"");
+  set("f-subtotal",d.subtotal||"0.00");
+  set("f-gst",d.gst||"0.00");
+  set("f-total",d.total||"0.00");
+  set("f-claimPct",d.claimPct||"100");
+
+  // Populate selects
+  const atoSel=document.getElementById("f-atoCategory");
+  atoSel.innerHTML=`<option value="">(select if known)</option>`+ATO_CATS.map(c=>`<option value="${c}"${d.atoCategory===c?" selected":""}>${c}</option>`).join("");
+
+  const cats=prof?.categories||PERSONAL_CATS;
+  const catSel=document.getElementById("f-category");
+  catSel.innerHTML=`<option value=""></option>`+cats.map(c=>`<option value="${c}"${d.category===c?" selected":""}>${c}</option>`).join("");
+
+  const evSel=document.getElementById("f-evidenceType");
+  evSel.innerHTML=EVIDENCE_TYPES.map(e=>`<option value="${e}"${(d.evidenceType||EVIDENCE_TYPES[0])===e?" selected":""}>${e}</option>`).join("");
+
+  const pmSel=document.getElementById("f-paymentMethod");
+  pmSel.innerHTML=["Cash","Card","Bank Transfer","BPAY","Cheque","Unknown"].map(m=>`<option value="${m}"${(d.paymentMethod||"Card")===m?" selected":""}>${m}</option>`).join("");
+
+  const tdSel=document.getElementById("f-taxDeductible");
+  tdSel.innerHTML=["Yes","No","Partial"].map(v=>`<option value="${v}"${(d.taxDeductible||"Yes")===v?" selected":""}>${v}</option>`).join("");
+
+  const hasPrj=prof?.columns?.includes("project");
+  document.getElementById("f-project-group").style.display=hasPrj?"block":"none";
+  const hasClient=prof?.columns?.includes("client");
+  document.getElementById("f-client-group").style.display=hasClient?"block":"none";
+
+  const sb=document.getElementById("save-btn");
+  if(authStatus!=="ok")sb.textContent="Connect Google first (top bar)";
+  else sb.textContent="💾 Save Receipt";
+  sb.disabled=authStatus!=="ok";
+}
+
+function renderProfilePicks(){
+  const picks=document.getElementById("profile-picks");
+  const warn=document.getElementById("no-profile-warn");
+  if(!profiles.length){picks.innerHTML="";warn.style.display="block";return;}
+  warn.style.display="none";
+  picks.innerHTML=profiles.map(p=>`<button class="profile-pick${activeProfileId===p.id?" on":""}" style="--c:${p.color}" onclick="setActiveProfile('${p.id}');renderProfilePicks()">${p.icon} ${p.name}${activeProfileId===p.id?' <span style="color:var(--c)">✓</span>':""}</button>`).join("");
+}
+
+function calcFromTotal(){
+  const t=parseFloat(document.getElementById("f-total").value)||0;
+  document.getElementById("f-gst").value=(t/11).toFixed(2);
+  document.getElementById("f-subtotal").value=(t-t/11).toFixed(2);
+  updateClaim();
+}
+function calcFromSub(){
+  const s=parseFloat(document.getElementById("f-subtotal").value)||0;
+  const g=parseFloat(document.getElementById("f-gst").value)||0;
+  document.getElementById("f-total").value=(s+g).toFixed(2);
+  updateClaim();
+}
+function updateClaim(){
+  const t=parseFloat(document.getElementById("f-total").value)||0;
+  const p=parseFloat(document.getElementById("f-claimPct").value)||100;
+  document.getElementById("claim-result").textContent="= $"+((p/100)*t).toFixed(2)+" claimable";
+}
+
+function getFormData(){
+  const g=id=>document.getElementById(id)?.value||"";
+  return{refNumber:g("f-refNumber"),date:g("f-date"),vendor:g("f-vendor"),invoiceNumber:g("f-invoiceNumber"),abn:g("f-abn"),description:g("f-description"),atoCategory:g("f-atoCategory"),category:g("f-category"),evidenceType:g("f-evidenceType"),paymentMethod:g("f-paymentMethod"),taxDeductible:g("f-taxDeductible"),project:g("f-project"),client:g("f-client"),subtotal:g("f-subtotal"),gst:g("f-gst"),total:g("f-total"),claimPct:g("f-claimPct"),notes:g("f-notes")};
+}
+
+function isDuplicate(fd){return history.some(h=>h.vendor===fd.vendor&&h.total===fd.total&&h.date===fd.date);}
+
+async function doSave(force=false){
+  const prof=getActive();
+  if(!prof){alert("Select a profile first.");return;}
+  if(!prof.sheetId){alert("Profile has no Spreadsheet. Edit the profile first.");return;}
+  if(authStatus!=="ok"){alert("Connect to Google first using the Connect button in the top bar.");return;}
+  const fd=getFormData();
+  if(!force&&isDuplicate(fd)){if(!confirm(`Receipt for "${fd.vendor}" $${fd.total} on ${fd.date} may already exist.\n\nSave anyway?`))return;}
+  showView("saving");
+  try{
+    let fileLink="";
+    if(prof.folderId&&currentImage){
+      document.getElementById("saving-msg").textContent="Uploading image to Drive...";
+      const fn=`${fd.refNumber}_${(fd.vendor||"receipt").replace(/[^a-z0-9]/gi,"_")}.jpg`;
+      const up=await uploadFile(prof.folderId,fn,currentImage.b64,currentImage.mime);
+      fileLink=up.webViewLink||"";
+    }
+    document.getElementById("saving-msg").textContent="Logging to spreadsheet...";
+    const af=makeApiFetch();
+    await appendRow(af,prof.sheetId,prof.tabName||"Sheet1",prof.columns,fd,fileLink);
+    history=[{...fd,receiptLink:fileLink,profileName:prof.name,savedAt:Date.now()},...history].slice(0,100);
+    lsSet("rv_history",history);
+    // retry queue
+    const q=getQueue();
+    if(q.length){
+      document.getElementById("saving-msg").textContent=`Retrying ${q.length} queued receipt(s)...`;
+      for(const item of q){try{await appendRow(af,item.profile.sheetId,item.profile.tabName||"Sheet1",item.profile.columns,item.form,"");removeQueue(item.id);}catch{}}
+    }
+    document.getElementById("done-ref").textContent=fd.refNumber;
+    document.getElementById("done-profile").textContent="→ "+prof.name;
+    const dl=document.getElementById("done-link");
+    if(fileLink){dl.href=fileLink;dl.style.display="block";}else dl.style.display="none";
+    showView("done");
+  }catch(e){
+    addQueue({id:uid(),form:fd,profile:prof,fileLink:""});
+    showToast("Save failed — queued for retry","error");showView("review");
+  }
+}
+
+function saveToQueue(){
+  const prof=getActive();if(!prof)return;
+  addQueue({id:uid(),form:getFormData(),profile:prof,fileLink:""});
+  showToast("Queued — saves when connected");goHome();
+}
+
+function goHome(){
+  const fd=getFormData();
+  if(fd.vendor||parseFloat(fd.total)>0){if(!confirm("Discard this receipt?"))return;}
+  currentImage=null;showView("home");
+}
+
+async function retryQueue(){
+  const q=getQueue();if(!q.length){showToast("Nothing queued");return;}
+  const af=makeApiFetch();let n=0;
+  for(const item of q){try{await appendRow(af,item.profile.sheetId,item.profile.tabName||"Sheet1",item.profile.columns,item.form,"");removeQueue(item.id);n++;}catch{}}
+  showToast(n>0?`${n} queued receipt(s) saved!`:"Retry failed — connect Google first",n>0?"success":"error");
+  renderHomeState();
+}
+
+// ─── PROFILES ─────────────────────────────────────────────────────────────────
+function renderProfiles(){
+  const list=document.getElementById("profile-list");
+  if(!profiles.length){list.innerHTML='<div style="text-align:center;padding:36px;color:#6b7280;font-size:20px">📂 No profiles yet.</div>';return;}
+  list.innerHTML=profiles.map(p=>`
+    <div class="profile-card${activeProfileId===p.id?" on":""}" style="--pc:${p.color}">
+      <div class="pc-left"><span class="pc-icon">${p.icon}</span>
+        <div><div class="pc-name">${p.name}</div><div class="pc-meta">${p.columns?.length||0} columns · ${p.tabName||"Sheet1"}</div>
+          <div class="pc-tags">
+            ${p.folderId?'<span class="tag-ok">✓ Folder</span>':'<span class="tag-warn">⚠ No folder</span>'}
+            ${p.sheetId?'<span class="tag-ok">✓ Sheet</span>':'<span class="tag-warn">⚠ No sheet</span>'}
+          </div>
+        </div>
+      </div>
+      <div class="pc-actions">
+        ${activeProfileId!==p.id?`<button class="pc-btn" onclick="setActiveProfile('${p.id}');showToast('Active profile changed')">Use</button>`:'<span class="pc-active">Active</span>'}
+        <button class="pc-btn" onclick="editProfile('${p.id}')">Edit</button>
+        <button class="pc-btn pc-del" onclick="deleteProfile('${p.id}')">✕</button>
+      </div>
+    </div>`).join("");
+}
+
+function deleteProfile(id){
+  if(!confirm("Delete this profile?"))return;
+  profiles=profiles.filter(p=>p.id!==id);lsSet("rv_profiles",profiles);
+  if(activeProfileId===id){activeProfileId=profiles[0]?.id||null;lsSet("rv_activeProfile",activeProfileId);}
+  renderProfiles();
+}
+
+const EP_ICONS=["📁","🏢","🧾","💼","📐","🏗","🚗","🏠","💡","🎯","🌿","📊"];
+const EP_COLORS=["#3b82f6","#10b981","#f59e0b","#8b5cf6","#ef4444","#ec4899","#14b8a6","#f97316","#64748b"];
+let epState={};
+
+function newProfile(){
+  epState={id:uid(),name:"",icon:"📁",color:"#6366f1",folderId:"",sheetId:"",tabName:"Sheet1",columns:[...TEMPLATES.personal.columns],categories:[...PERSONAL_CATS],_new:true};
+  openEditProfile();
+}
+function editProfile(id){
+  epState={...profiles.find(p=>p.id===id)};
+  openEditProfile();
+}
+
+function openEditProfile(){
+  document.getElementById("ep-title").textContent=epState._new?"New Profile":"Edit Profile";
+  document.getElementById("ep-name").value=epState.name||"";
+  document.getElementById("ep-categories").value=(epState.categories||[]).join("\n");
+  document.getElementById("ep-auth-warn").style.display=authStatus==="ok"?"none":"block";
+
+  // Icons
+  document.getElementById("ep-icons").innerHTML=EP_ICONS.map(i=>`<button class="icon-btn${epState.icon===i?" on":""}" onclick="epSetIcon('${i}')">${i}</button>`).join("");
+  // Colors
+  document.getElementById("ep-colors").innerHTML=EP_COLORS.map(c=>`<span class="color-dot${epState.color===c?" on":""}" style="background:${c}" onclick="epSetColor('${c}')"></span>`).join("");
+
+  // Folders / Sheets — searchable
+  populateSearchSelect("ep-folder","ep-folder-search",gFolders,epState.folderId);
+  populateSearchSelect("ep-sheet","ep-sheet-search",gSheets,epState.sheetId);
+
+  // Load tabs if sheet selected
+  if(epState.sheetId&&authStatus==="ok"){loadTabsForProfile();}
+  else{document.getElementById("ep-tab-group").style.display="none";}
+
+  // Columns
+  renderEpColumns();
+  showView("editProfile");
+}
+
+async function loadTabsForProfile(){
+  const sheetId=document.getElementById("ep-sheet").value;
+  if(!sheetId||authStatus!=="ok"){document.getElementById("ep-tab-group").style.display="none";return;}
+  try{
+    const tabs=await listTabs(makeApiFetch(),sheetId);
+    const sel=document.getElementById("ep-tab");
+    sel.innerHTML=tabs.map(t=>`<option value="${t}"${epState.tabName===t?" selected":""}>${t}</option>`).join("");
+    document.getElementById("ep-tab-group").style.display=tabs.length?"block":"none";
+  }catch{document.getElementById("ep-tab-group").style.display="none";}
+}
+
+function renderEpColumns(){
+  document.getElementById("ep-columns").innerHTML=ALL_COLS.map(col=>`
+    <button class="col-btn${epState.columns?.includes(col.id)?" on":""}${col.always?" locked":""}" onclick="epToggleCol('${col.id}')">
+      <span class="col-chk">${epState.columns?.includes(col.id)?"✓":"+"}</span>
+      <span>${col.label}</span>
+      ${col.always?'<span class="col-locked">always</span>':""}
+    </button>`).join("");
+}
+
+function epSetIcon(i){epState.icon=i;document.getElementById("ep-icons").querySelectorAll(".icon-btn").forEach((b,idx)=>b.classList.toggle("on",EP_ICONS[idx]===i));}
+function epSetColor(c){epState.color=c;document.getElementById("ep-colors").querySelectorAll(".color-dot").forEach((b,idx)=>b.classList.toggle("on",EP_COLORS[idx]===c));}
+function epToggleCol(cid){
+  const col=ALL_COLS.find(c=>c.id===cid);if(col?.always)return;
+  const has=epState.columns?.includes(cid)||false;
+  epState.columns=has?epState.columns.filter(c=>c!==cid):[...(epState.columns||[]),cid];
+  renderEpColumns();
+}
+
+function saveProfile(){
+  if(!document.getElementById("ep-name").value.trim()){alert("Enter a profile name.");return;}
+  epState.name=document.getElementById("ep-name").value.trim();
+  epState.folderId=document.getElementById("ep-folder").value;
+  epState.sheetId=document.getElementById("ep-sheet").value;
+  epState.tabName=document.getElementById("ep-tab").value||"Sheet1";
+  epState.categories=document.getElementById("ep-categories").value.split("\n").filter(Boolean);
+  const {_new,...p}=epState;
+  if(_new)profiles=[...profiles,p];
+  else profiles=profiles.map(x=>x.id===p.id?p:x);
+  lsSet("rv_profiles",profiles);
+  if(!activeProfileId){activeProfileId=p.id;lsSet("rv_activeProfile",p.id);}
+  showToast(`Profile "${p.name}" saved`);showView("profiles");
+}
+
+// ─── TEMPLATES ────────────────────────────────────────────────────────────────
+let deployedData=null;
+
+function renderTemplates(){
+  const hasCreds=!!(creds.clientId);
+  document.getElementById("tmpl-no-creds").style.display=hasCreds?"none":"flex";
+  document.getElementById("tmpl-no-auth").style.display=(hasCreds&&authStatus!=="ok")?"flex":"none";
+
+  document.getElementById("tmpl-grid").innerHTML=Object.entries(TEMPLATES).map(([key,t])=>`
+    <div class="tmpl-card" style="--tc:${t.color}">
+      <div class="tmpl-icon">${t.icon}</div>
+      <div class="tmpl-name">${t.name}</div>
+      <div class="tmpl-desc">${t.description}</div>
+      <div id="tmpl-form-${key}">
+        <button class="tmpl-deploy-btn" onclick="openTmplForm('${key}')" ${authStatus!=="ok"?"disabled":""}>Deploy to Drive →</button>
+      </div>
+    </div>`).join("");
+
+  document.getElementById("tcol-grid").innerHTML=Object.entries(TEMPLATES).map(([key,t])=>`
+    <div class="tcol-card" style="border-top:2px solid ${t.color}">
+      <div style="font-weight:600;font-size:13px;color:#fff">${t.icon} ${t.name}</div>
+      <div class="tcol-tags">${t.columns.map(cid=>{const c=ALL_COLS.find(x=>x.id===cid);return`<span class="col-tag">${c?.label||cid}</span>`;}).join("")}</div>
+    </div>`).join("");
+}
+
+function openTmplForm(key){
+  const t=TEMPLATES[key];
+  document.getElementById("tmpl-form-"+key).innerHTML=`
+    <input class="input" id="tmpl-name-${key}" value="${t.name}" style="margin-bottom:6px">
+    <div class="search-select-wrap" style="margin-bottom:6px">
+      <input class="input" id="tmpl-folder-search-${key}" placeholder="Search folders... (or leave blank for Drive root)" oninput="filterTmplFolder('${key}')" autocomplete="off">
+      <div class="search-select-list" id="tmpl-folder-list-${key}"></div>
+      <input type="hidden" id="tmpl-folder-${key}">
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="back-btn" style="font-size:12px;padding:5px 10px" onclick="renderTemplates()">Cancel</button>
+      <button class="tmpl-deploy-btn" id="tmpl-create-${key}" onclick="deployTemplate('${key}')">Create Sheet</button>
+    </div>`;
+}
+
+async function deployTemplate(key){
+  const t=TEMPLATES[key];
+  const name=document.getElementById("tmpl-name-"+key).value||t.name;
+  const folderId=document.getElementById("tmpl-folder-"+key).value;
+  const btn=document.getElementById("tmpl-create-"+key);
+  btn.textContent="Creating...";btn.disabled=true;
+  try{
+    const ss=await createSpreadsheet(name,folderId,t.columns,t.defaultTab,t.summaryTab);
+    deployedData={...ss,key,columns:t.columns,tabName:t.defaultTab};
+    document.getElementById("deploy-name").textContent=`"${name}"`;
+    document.getElementById("deploy-link").href=ss.url;
+    document.getElementById("deploy-result").style.display="flex";
+    showToast(`"${name}" created in Google Drive!`);
+    renderTemplates();
+  }catch(e){showToast("Failed: "+e.message,"error");btn.textContent="Create Sheet";btn.disabled=false;}
+}
+
+function applyDeployedSheet(){
+  if(!deployedData)return;
+  const t=TEMPLATES[deployedData.key];
+  const np={id:uid(),name:deployedData.name,icon:t.icon,color:t.color,folderId:"",sheetId:deployedData.id,tabName:deployedData.tabName,columns:deployedData.columns,categories:CATS_BY_TYPE[deployedData.key]||CATS_BY_TYPE.business};
+  profiles=[...profiles,np];lsSet("rv_profiles",profiles);
+  activeProfileId=np.id;lsSet("rv_activeProfile",np.id);
+  deployedData=null;document.getElementById("deploy-result").style.display="none";
+  showToast("Profile created! Set a Drive folder in Profiles.");showView("profiles");
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function loadSettings(){
+  document.getElementById("s-anthropic-key").value=creds.anthropicKey||"";
+  document.getElementById("s-client-id").value=creds.clientId||"";
+  document.getElementById("s-api-key").value=creds.apiKey||"";
+}
+function saveSettings(){
+  creds={anthropicKey:document.getElementById("s-anthropic-key").value.trim(),clientId:document.getElementById("s-client-id").value.trim(),apiKey:document.getElementById("s-api-key").value.trim()};
+  lsSet("rv_creds",creds);resetAuth();authStatus="idle";
+  updateAuthStrip();renderHomeState();
+  showToast("Credentials saved — click Connect Google in the top bar");
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────────────────────
+function toggleHistory(){
+  const d=document.getElementById("history-drawer");
+  d.classList.toggle("show");
+  if(d.classList.contains("show"))renderHistory();
+}
+function renderHistory(){
+  const q=document.getElementById("hist-search").value.toLowerCase();
+  const filtered=history.filter(h=>!q||h.vendor?.toLowerCase().includes(q)||h.category?.toLowerCase().includes(q)||h.atoCategory?.toLowerCase().includes(q));
+  const list=document.getElementById("hist-list");
+  if(!filtered.length){list.innerHTML='<p style="padding:18px 16px;color:#6b7280;font-size:13px;text-align:center">No receipts yet.</p>';return;}
+  list.innerHTML=filtered.map(h=>`
+    <div class="hist-row">
+      <div class="hist-main"><span class="hist-vendor">${h.vendor||"Unknown"}</span><span class="hist-amt">$${h.total}</span></div>
+      <div class="hist-sub">
+        <span>${h.date||""}</span>
+        ${h.atoCategory?`<span class="tag-ato">${h.atoCategory.split(" ")[0]}</span>`:""}
+        ${h.claimPct&&h.claimPct!=="100"?`<span class="tag-claim">${h.claimPct}%</span>`:""}
+        <span class="tag-profile">${h.profileName||""}</span>
+        ${h.receiptLink?`<a href="${h.receiptLink}" target="_blank" style="color:#f0c040;font-size:11px">View ↗</a>`:""}
+      </div>
+    </div>`).join("");
+}
+function clearHistory(){
+  if(!confirm("Clear history? Spreadsheet is unaffected."))return;
+  history=[];lsSet("rv_history",[]);renderHistory();
+}
+
+
+// ─── SEARCHABLE DROPDOWN ──────────────────────────────────────────────────────
+function populateSearchSelect(hiddenId, searchId, items, selectedId){
+  const hidden=document.getElementById(hiddenId);
+  const search=document.getElementById(searchId);
+  const list=document.getElementById(hiddenId+"-list");
+  if(!hidden||!search||!list)return;
+  hidden.value=selectedId||"";
+  // Show selected name in search box
+  const sel=items.find(i=>i.id===selectedId);
+  search.value=sel?sel.name:"";
+  renderSearchList(hiddenId,search,list,items,selectedId);
+  // Close list initially unless nothing selected
+  list.classList.remove("open");
+  // Add chosen indicator
+  let chosen=document.getElementById(hiddenId+"-chosen");
+  if(!chosen){chosen=document.createElement("div");chosen.id=hiddenId+"-chosen";chosen.className="search-select-chosen";search.parentNode.insertBefore(chosen,list.nextSibling);}
+  chosen.textContent=sel?"✓ "+sel.name:"";
+}
+
+function renderSearchList(hiddenId,search,list,items,selectedId){
+  const q=search.value.toLowerCase();
+  const filtered=items.filter(i=>!q||i.name.toLowerCase().includes(q));
+  list.innerHTML=filtered.length
+    ?filtered.map(i=>`<div class="search-select-item${i.id===selectedId?" selected":""}" onclick="selectSearchItem('${hiddenId}','${i.id}','${i.name.replace(/'/g,"\\'")}',${JSON.stringify(items)})">${i.name}</div>`).join("")
+    :`<div class="search-select-item" style="color:#6b7280;cursor:default">No results</div>`;
+  list.classList.add("open");
+}
+
+function filterSearchSelect(hiddenId,searchId,items){
+  const search=document.getElementById(searchId);
+  const list=document.getElementById(hiddenId+"-list");
+  const hidden=document.getElementById(hiddenId);
+  renderSearchList(hiddenId,search,list,items,hidden.value);
+}
+
+function selectSearchItem(hiddenId,id,name,items){
+  const hidden=document.getElementById(hiddenId);
+  const search=document.getElementById(hiddenId+"-search");
+  const list=document.getElementById(hiddenId+"-list");
+  hidden.value=id;
+  search.value=name;
+  list.classList.remove("open");
+  let chosen=document.getElementById(hiddenId+"-chosen");
+  if(chosen)chosen.textContent="✓ "+name;
+  // If sheet selected, load tabs
+  if(hiddenId==="ep-sheet"){epState.sheetId=id;loadTabsForProfile();}
+  if(hiddenId==="ep-folder"){epState.folderId=id;}
+}
+
+
+function filterTmplFolder(key){
+  const search=document.getElementById("tmpl-folder-search-"+key);
+  const list=document.getElementById("tmpl-folder-list-"+key);
+  const hidden=document.getElementById("tmpl-folder-"+key);
+  const q=search.value.toLowerCase();
+  const all=[{id:"",name:"Drive root (no folder)"},...gFolders];
+  const filtered=all.filter(i=>!q||i.name.toLowerCase().includes(q));
+  list.innerHTML=filtered.map(i=>`<div class="search-select-item" onclick="selectTmplFolder('${key}','${i.id}','${i.name.replace(/'/g,"\\'")}')">${i.name}</div>`).join("");
+  list.classList.add("open");
+}
+function selectTmplFolder(key,id,name){
+  document.getElementById("tmpl-folder-"+key).value=id;
+  document.getElementById("tmpl-folder-search-"+key).value=name==="Drive root (no folder)"?"":name;
+  document.getElementById("tmpl-folder-list-"+key).classList.remove("open");
+}
+// Close search dropdowns when clicking outside
+document.addEventListener("click",function(e){
+  // Close template folder lists too
+  document.querySelectorAll('[id^="tmpl-folder-list-"]').forEach(list=>{
+    const key=list.id.replace("tmpl-folder-list-","");
+    const search=document.getElementById("tmpl-folder-search-"+key);
+    if(search&&!search.closest(".search-select-wrap").contains(e.target))list.classList.remove("open");
+  });
+  ["ep-folder","ep-sheet"].forEach(id=>{
+    const wrap=document.getElementById(id+"-search")?.closest(".search-select-wrap");
+    const list=document.getElementById(id+"-list");
+    if(wrap&&list&&!wrap.contains(e.target))list.classList.remove("open");
+  });
+});
+
+// Also add search to template folder dropdowns dynamically handled in openTmplForm
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+loadSettings();
+renderHomeState();
+showView("home");
+</script>
+</body>
+</html>
