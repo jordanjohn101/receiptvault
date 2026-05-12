@@ -409,8 +409,8 @@ textarea.input{resize:vertical;min-height:56px}
       <div class="card">
         <div class="section-title">Google Destination</div>
         <p class="warn-text" id="ep-auth-warn" style="display:none">⚙ Connect Google first (top bar)</p>
-        <div class="fg"><label class="label">Drive Folder</label><div class="search-select-wrap"><input class="input" id="ep-folder-search" placeholder="Search folders..." oninput="filterSearchSelect('ep-folder','ep-folder-search',gFolders)" autocomplete="off"><div class="search-select-list" id="ep-folder-list"></div><input type="hidden" id="ep-folder"></div></div>
-        <div class="fg"><label class="label">Spreadsheet</label><div class="search-select-wrap"><input class="input" id="ep-sheet-search" placeholder="Search spreadsheets..." oninput="filterSearchSelect('ep-sheet','ep-sheet-search',gSheets)" autocomplete="off"><div class="search-select-list" id="ep-sheet-list"></div><input type="hidden" id="ep-sheet"></div></div>
+        <div class="fg"><label class="label">Drive Folder</label><div class="search-select-wrap"><input class="input" id="ep-folder-search" placeholder="Search folders..." oninput="_ssRender('ep-folder')" autocomplete="off"><div class="search-select-list" id="ep-folder-list"></div><input type="hidden" id="ep-folder"></div></div>
+        <div class="fg"><label class="label">Spreadsheet</label><div class="search-select-wrap"><input class="input" id="ep-sheet-search" placeholder="Search spreadsheets..." oninput="_ssRender('ep-sheet')" autocomplete="off"><div class="search-select-list" id="ep-sheet-list"></div><input type="hidden" id="ep-sheet"></div></div>
         <div class="fg" id="ep-tab-group"><label class="label">Sheet Tab</label><select class="input" id="ep-tab"></select></div>
       </div>
     </div>
@@ -1142,86 +1142,117 @@ function clearHistory(){
 
 
 // ─── SEARCHABLE DROPDOWN ──────────────────────────────────────────────────────
-function populateSearchSelect(hiddenId, searchId, items, selectedId){
+// Items stored here — never passed through HTML attribute strings (avoids all escaping bugs)
+const _ssData={};
+
+function populateSearchSelect(hiddenId,searchId,items,selectedId){
+  _ssData[hiddenId]=items||[];
   const hidden=document.getElementById(hiddenId);
   const search=document.getElementById(searchId);
   const list=document.getElementById(hiddenId+"-list");
   if(!hidden||!search||!list)return;
   hidden.value=selectedId||"";
-  // Show selected name in search box
-  const sel=items.find(i=>i.id===selectedId);
+  const sel=(items||[]).find(i=>i.id===selectedId);
   search.value=sel?sel.name:"";
-  renderSearchList(hiddenId,search,list,items,selectedId);
-  // Close list initially unless nothing selected
   list.classList.remove("open");
-  // Add chosen indicator
-  let chosen=document.getElementById(hiddenId+"-chosen");
-  if(!chosen){chosen=document.createElement("div");chosen.id=hiddenId+"-chosen";chosen.className="search-select-chosen";search.parentNode.insertBefore(chosen,list.nextSibling);}
-  chosen.textContent=sel?"✓ "+sel.name:"";
+  _ssUpdateChosen(hiddenId,sel?sel.name:"");
+  // Wire up: open list on input focus
+  search.onfocus=()=>_ssRender(hiddenId);
+  search.oninput=()=>_ssRender(hiddenId);
 }
 
-function renderSearchList(hiddenId,search,list,items,selectedId){
+function _ssUpdateChosen(hiddenId,name){
+  let el=document.getElementById(hiddenId+"-chosen");
+  if(!el){
+    const list=document.getElementById(hiddenId+"-list");
+    if(!list)return;
+    el=document.createElement("div");
+    el.id=hiddenId+"-chosen";
+    el.className="search-select-chosen";
+    list.parentNode.insertBefore(el,list.nextSibling);
+  }
+  el.textContent=name?"✓ "+name:"";
+}
+
+function _ssRender(hiddenId){
+  const items=_ssData[hiddenId]||[];
+  const search=document.getElementById(hiddenId+"-search");
+  const list=document.getElementById(hiddenId+"-list");
+  const hidden=document.getElementById(hiddenId);
+  if(!search||!list)return;
   const q=search.value.toLowerCase();
+  const selId=hidden?hidden.value:"";
   const filtered=items.filter(i=>!q||i.name.toLowerCase().includes(q));
-  list.innerHTML=filtered.length
-    ?filtered.map(i=>`<div class="search-select-item${i.id===selectedId?" selected":""}" onclick="selectSearchItem('${hiddenId}','${i.id}','${i.name.replace(/'/g,"\\'")}',${JSON.stringify(items)})">${i.name}</div>`).join("")
-    :`<div class="search-select-item" style="color:#6b7280;cursor:default">No results</div>`;
+  list.innerHTML="";
+  if(!filtered.length){
+    const d=document.createElement("div");
+    d.className="search-select-item";
+    d.style.color="#6b7280";
+    d.style.cursor="default";
+    d.textContent="No results";
+    list.appendChild(d);
+  } else {
+    filtered.forEach(item=>{
+      const d=document.createElement("div");
+      d.className="search-select-item"+(item.id===selId?" selected":"");
+      d.textContent=item.name;
+      // Use mousedown so it fires before blur closes the list
+      d.addEventListener("mousedown",function(e){
+        e.preventDefault();
+        _ssSelect(hiddenId,item.id,item.name);
+      });
+      list.appendChild(d);
+    });
+  }
   list.classList.add("open");
 }
 
-function filterSearchSelect(hiddenId,searchId,items){
-  const search=document.getElementById(searchId);
-  const list=document.getElementById(hiddenId+"-list");
-  const hidden=document.getElementById(hiddenId);
-  renderSearchList(hiddenId,search,list,items,hidden.value);
-}
-
-function selectSearchItem(hiddenId,id,name,items){
+function _ssSelect(hiddenId,id,name){
   const hidden=document.getElementById(hiddenId);
   const search=document.getElementById(hiddenId+"-search");
   const list=document.getElementById(hiddenId+"-list");
-  hidden.value=id;
-  search.value=name;
-  list.classList.remove("open");
-  let chosen=document.getElementById(hiddenId+"-chosen");
-  if(chosen)chosen.textContent="✓ "+name;
-  // If sheet selected, load tabs
+  if(hidden)hidden.value=id;
+  if(search)search.value=name;
+  if(list)list.classList.remove("open");
+  _ssUpdateChosen(hiddenId,name);
   if(hiddenId==="ep-sheet"){epState.sheetId=id;loadTabsForProfile();}
   if(hiddenId==="ep-folder"){epState.folderId=id;}
 }
 
-
+// Called from oninput on the folder search in templates (key-based)
 function filterTmplFolder(key){
   const search=document.getElementById("tmpl-folder-search-"+key);
   const list=document.getElementById("tmpl-folder-list-"+key);
-  const hidden=document.getElementById("tmpl-folder-"+key);
+  if(!search||!list)return;
   const q=search.value.toLowerCase();
   const all=[{id:"",name:"Drive root (no folder)"},...gFolders];
   const filtered=all.filter(i=>!q||i.name.toLowerCase().includes(q));
-  list.innerHTML=filtered.map(i=>`<div class="search-select-item" onclick="selectTmplFolder('${key}','${i.id}','${i.name.replace(/'/g,"\\'")}')">${i.name}</div>`).join("");
-  list.classList.add("open");
-}
-function selectTmplFolder(key,id,name){
-  document.getElementById("tmpl-folder-"+key).value=id;
-  document.getElementById("tmpl-folder-search-"+key).value=name==="Drive root (no folder)"?"":name;
-  document.getElementById("tmpl-folder-list-"+key).classList.remove("open");
-}
-// Close search dropdowns when clicking outside
-document.addEventListener("click",function(e){
-  // Close template folder lists too
-  document.querySelectorAll('[id^="tmpl-folder-list-"]').forEach(list=>{
-    const key=list.id.replace("tmpl-folder-list-","");
-    const search=document.getElementById("tmpl-folder-search-"+key);
-    if(search&&!search.closest(".search-select-wrap").contains(e.target))list.classList.remove("open");
+  list.innerHTML="";
+  filtered.forEach(item=>{
+    const d=document.createElement("div");
+    d.className="search-select-item";
+    d.textContent=item.name;
+    d.addEventListener("mousedown",function(e){
+      e.preventDefault();
+      document.getElementById("tmpl-folder-"+key).value=item.id;
+      search.value=item.id?"":item.name==="Drive root (no folder)"?"":item.name;
+      if(item.id)search.value=item.name;
+      list.classList.remove("open");
+    });
+    list.appendChild(d);
   });
-  ["ep-folder","ep-sheet"].forEach(id=>{
-    const wrap=document.getElementById(id+"-search")?.closest(".search-select-wrap");
-    const list=document.getElementById(id+"-list");
-    if(wrap&&list&&!wrap.contains(e.target))list.classList.remove("open");
+  list.classList.add("open");
+  // Wire focus to open list too
+  search.onfocus=()=>filterTmplFolder(key);
+}
+
+// Close all open lists on outside click
+document.addEventListener("click",function(e){
+  document.querySelectorAll(".search-select-list.open").forEach(list=>{
+    const wrap=list.closest(".search-select-wrap");
+    if(wrap&&!wrap.contains(e.target))list.classList.remove("open");
   });
 });
-
-// Also add search to template folder dropdowns dynamically handled in openTmplForm
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 loadSettings();
